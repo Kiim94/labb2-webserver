@@ -1,6 +1,6 @@
+//importera de bibliotek som behövs
 require("dotenv").config();
 
-//importera de bibliotek som behövs
 const express = require("express");
 const cors = require("cors");
 const { Client } = require("pg");
@@ -35,26 +35,6 @@ CREATE TABLE IF NOT EXISTS works (
     )
 `;
 
-async function startServer() {
-    try{
-        await client.connect();
-        console.log("Uppkopplad till PostgreSQL");
-        
-        await client.query(queryTable);
-        console.log("Tabellen har skapats!");
-
-        app.listen(PORT, () => {
-            console.log("API fungerar på port: " + PORT);
-        })
-        
-    }catch(err){
-        console.error("Databas fel:", err);
-        return;
-    }
-}
-
-startServer();
-
 //det gjorde mig paranoid att se "cannot GET" när jag startade server. Så la till detta nedan
 app.get("/", (req, res) => {
     res.send("API server fungerar!");
@@ -68,6 +48,13 @@ app.post("/api/works", async (req,res) => {
         const start_date = req.body.start_date || null;
         const end_date = req.body.end_date || null;
         const description = req.body.description || null;
+
+        //validering för vad som måste komma med
+        if(!company || !jobtitle){
+            return res.status(400).json({
+                error: "company och jobtitle krävs"
+            });
+        }
 
         //returning * betyder "returnera hela raden som just skapades". Så man vet/kan se det som skapats
         const result = await client.query(
@@ -100,6 +87,12 @@ app.put("/api/works/:id", async (req, res) => {
         const start_date = req.body.start_date;
         const end_date = req.body.end_date;
         const description = req.body.description;
+
+        if(!company || !jobtitle){
+            return res.status(400).json({
+                error: "company och jobtitle krävs"
+            });
+        }
 
         const result = await client.query(
             `UPDATE works SET company=$1, jobtitle=$2, start_date=$3, end_date=$4, description=$5
@@ -134,3 +127,24 @@ app.delete("/api/works/:id", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 })
+
+//starta server-function
+async function startServer() {
+    try{
+        await client.connect();
+        console.log("Uppkopplad till PostgreSQL");
+        
+        await client.query(queryTable);
+        console.log("Tabellen har skapats!");
+
+        app.listen(PORT, () => {
+            console.log("API fungerar på port: " + PORT);
+        })
+        
+    }catch(err){
+        console.error("Databas fel:", err);
+        return;
+    }
+}
+
+startServer();
