@@ -152,7 +152,7 @@ async function startServer() {
         
     }catch(err){
         //felhantering vid start.
-        //Ingen res.status pga att det inte är en http-request utan sker direkt vid serverstart
+        //Ingen res.status pga att det inte är en http-request utan sker direkt när servern startas
         console.error("Databas fel:", err);
         return;
     }
