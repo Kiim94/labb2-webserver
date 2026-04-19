@@ -43,6 +43,7 @@ app.get("/", (req, res) => {
 //routes
 app.post("/api/works", async (req,res) => {
     try{
+        //variabler för vilken data som ska "vara med". Tre sista är ok att lämna tomma
         const company = req.body.company;
         const jobtitle = req.body.jobtitle;
         const start_date = req.body.start_date || null;
@@ -51,6 +52,7 @@ app.post("/api/works", async (req,res) => {
 
         //validering för vad som måste komma med
         if(!company || !jobtitle){
+            //skicka status 400 och error meddelande om problemet
             return res.status(400).json({
                 error: "company och jobtitle krävs"
             });
@@ -76,17 +78,19 @@ app.get("/api/works", async(req, res) => {
         //visa hela resultatet = allt som finns, alla rader
         res.json(result.rows);
     }catch(err){
+        //skicka server fel om något inte fungerar
         res.status(500).json({ error: err.message });
     }
 });
 
 app.put("/api/works/:id", async (req, res) => {
     try{
+        //samma variabler som i post
         const company = req.body.company;
         const jobtitle = req.body.jobtitle;
-        const start_date = req.body.start_date;
-        const end_date = req.body.end_date;
-        const description = req.body.description;
+        const start_date = req.body.start_date || null;
+        const end_date = req.body.end_date || null;
+        const description = req.body.description || null;
 
         if(!company || !jobtitle){
             return res.status(400).json({
@@ -102,9 +106,11 @@ app.put("/api/works/:id", async (req, res) => {
         );
         //om ingen rad uppdateras så finns inte id
         if(result.rows.length === 0){
+            //skicka status "kunde inte hitta"
             res.status(404).json({ error: "Kunde inte hittas. Finns id?"});
             return;
         }
+        //om det verkar ok, skicka den uppdaterade datan för raden
         res.status(200).json(result.rows[0]);
 
     }catch(err){
@@ -128,20 +134,25 @@ app.delete("/api/works/:id", async (req, res) => {
     }
 })
 
-//starta server-function
+//starta server-function. En async, try, catch utifall att något skulle gå fel när den ska "lyssna"
 async function startServer() {
     try{
+        //vänta på att ansluta
         await client.connect();
         console.log("Uppkopplad till PostgreSQL");
         
+        //vänta på förfrågan om tabellens skapande
         await client.query(queryTable);
         console.log("Tabellen har skapats!");
 
+        //lyssna på port
         app.listen(PORT, () => {
             console.log("API fungerar på port: " + PORT);
         })
         
     }catch(err){
+        //felhantering vid start.
+        //Ingen res.status pga att det inte är en http-request utan sker direkt vid serverstart
         console.error("Databas fel:", err);
         return;
     }
